@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aekovera Quoting System</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+            color: white;
+            padding: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            animation: slideInLeft 0.8s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .sparkle {
+            display: inline-block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-bottom: 25px;
+            animation: slideInLeft 0.8s ease-out 0.2s backwards;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: slideInLeft 0.8s ease-out 0.4s backwards;
+        }
+        
+        .stat-badge {
+            background: rgba(255,255,255,0.25);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: default;
+        }
+        
+        .stat-badge:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: linear-gradient(to right, #f8fafc, #e2e8f0);
+            border-bottom: 3px solid #cbd5e1;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 25px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-50%);
+        }
+        
+        .tab:hover {
+            background: linear-gradient(to bottom, rgba(102, 126, 234, 0.1), transparent);
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+        
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .tab.active::after {
+            width: 100%;
+        }
+        
+        .content {
+            padding: 50px;
+            animation: fadeInUp 0.6s ease-out 0.3s backwards;
+        }
+        
+        .form-box {
+            background: linear-gradient(135deg, rgba(224, 231, 255, 0.8) 0%, rgba(243, 232, 255, 0.8) 100%);
+            backdrop-filter: blur(10px);
+            border: 3px solid #c7d2fe;
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 35px;
+            transition: all 0.4s;
+            animation: slideInRight 0.6s ease-out;
+        }
+        
+        .form-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+        
+        .form-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .form-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #475569;
+            transition: all 0.3s;
+        }
+        
+        .form-input, .form-select {
+            padding: 14px 18px;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .form-input:hover, .form-select:hover {
+            border-color: #a5b4fc;
+        }
+        
+        .btn {
+            padding: 18px 38px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .result-box {
+            background: linear-gradient(135deg, rgba(209, 250, 229, 0.9) 0%, rgba(167, 243, 208, 0.9) 100%);
+            border: 3px solid #6ee7b7;
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 25px;
+            animation: fadeInUp 0.6s ease-out;
+            transition: all 0.4s;
+        }
+        
+        .result-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+        }
+        
+        .result-price {
+            font-size: 5rem;
+            font-weight: 900;
+            color: #065f46;
+            margin: 15px 0;
+            animation: pulse 2s ease-in-out infinite;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .confidence-badge {
+            display: inline-block;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 1rem;
+            transition: all 0.3s;
+            cursor: default;
+        }
+        
+        .confidence-badge:hover {
+            transform: scale(1.1);
+        }
+        
+        .confidence-high { background: #6ee7b7; color: #065f46; }
+        .confidence-medium { background: #fde68a; color: #92400e; }
+        .confidence-low { background: #fca5a5; color: #991b1b; }
+        
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            padding: 18px;
+            text-align: left;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 3px solid #c7d2fe;
+            font-size: 1.05rem;
+        }
+        
+        td {
+            padding: 18px;
+            border-bottom: 2px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        
+        tr {
+            transition: all 0.3s;
+        }
+        
+        tr:hover {
+            background: linear-gradient(to right, rgba(224, 231, 255, 0.3), rgba(243, 232, 255, 0.3));
+            transform: scale(1.01);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: scale(1.15) rotate(-3deg);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.9) 100%);
+            border: 3px solid #fbbf24;
+            border-radius: 25px;
+            padding: 35px;
+            margin-top: 25px;
+            animation: fadeInUp 0.6s ease-out;
+            transition: all 0.4s;
+        }
+        
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(251, 191, 36, 0.3);
+        }
+        
+        .info-box h3 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #92400e;
+            font-weight: 800;
+        }
+        
+        .info-box ul {
+            list-style: none;
+        }
+        
+        .info-box li {
+            padding: 12px 0;
+            color: #78350f;
+            padding-left: 35px;
+            position: relative;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .info-box li:hover {
+            transform: translateX(10px);
+            color: #92400e;
+        }
+        
+        .info-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #f59e0b;
+            font-weight: 900;
+            font-size: 1.3rem;
+        }
+        
+        .hide { display: none; }
+        
+        .sync-status {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+            font-weight: 700;
+            animation: fadeInUp 0.6s ease-out;
+            z-index: 1000;
+        }
+        
+        .sync-status.syncing {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        
+        .sync-status.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+    </style>
+</head>
+<body>
+    <div id="syncStatus" class="sync-status hide">🔄 Syncing...</div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>
+                    <span class="sparkle">✨</span>
+                    Aekovera Quoting System
+                </h1>
+                <p>Intelligent pricing powered by real supplier data • Real-time cloud sync</p>
+                <div class="stats">
+                    <div class="stat-badge" id="quoteCount">
+                        <span class="loading-spinner"></span>Loading...
+                    </div>
+                    <div class="stat-badge" id="productCount">
+                        <span class="loading-spinner"></span>Loading...
+                    </div>
+                    <div class="stat-badge" id="syncBadge">☁️ Cloud Connected</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('estimator')">💰 Price Estimator</button>
+            <button class="tab" onclick="showTab('database')">📚 Quote Database</button>
+        </div>
+
+        <div class="content">
+            <!-- ESTIMATOR TAB -->
+            <div id="estimator-tab">
+                <div class="form-box">
+                    <div class="form-title">📦 Enter Product Requirements</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Product Type</label>
+                            <select class="form-select" id="est-product">
+                                <option value="">Select product type...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Size</label>
+                            <input class="form-input" type="text" id="est-size" placeholder="e.g. 12oz">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity</label>
+                            <input class="form-input" type="number" id="est-quantity" placeholder="e.g. 1000">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="calculateEstimate()">🔍 Calculate Estimate</button>
+                </div>
+
+                <div id="estimation-result" class="hide"></div>
+
+                <div id="how-it-works">
+                    <div class="info-box">
+                        <h3>📖 How This Works:</h3>
+                        <ul>
+                            <li>Select the product type from your cloud database</li>
+                            <li>Enter the size and quantity you need</li>
+                            <li>AI finds similar quotes and adjusts for quantity differences</li>
+                            <li>Get instant price estimates with confidence levels</li>
+                            <li>All data syncs in real-time across your team</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATABASE TAB -->
+            <div id="database-tab" class="hide">
+                <div class="form-box">
+                    <div class="form-title">➕ Add New Quote</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Supplier Name *</label>
+                            <input class="form-input" type="text" id="supplier" placeholder="Supplier Name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Product Type *</label>
+                            <input class="form-input" type="text" id="productType" placeholder="e.g. Glass Jar">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Size *</label>
+                            <input class="form-input" type="text" id="size" placeholder="e.g. 12oz">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price Per Unit ($) *</label>
+                            <input class="form-input" type="number" step="0.01" id="price" placeholder="e.g. 1.50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity *</label>
+                            <input class="form-input" type="number" id="quantity" placeholder="e.g. 1000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">MOQ</label>
+                            <input class="form-input" type="number" id="moq" placeholder="Minimum Order">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lead Time</label>
+                            <input class="form-input" type="text" id="leadTime" placeholder="e.g. 3-4 weeks">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date Received</label>
+                            <input class="form-input" type="date" id="dateReceived">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <input class="form-input" type="text" id="notes" placeholder="Additional notes">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addQuote()">➕ Add Quote</button>
+                    <button class="btn btn-success" onclick="exportCSV()">💾 Export CSV</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Product</th>
+                                <th>Size</th>
+                                <th>Price/Unit</th>
+                                <th>Quantity</th>
+                                <th>MOQ</th>
+                                <th>Lead Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quotesTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <h3>💡 Pro Tips:</h3>
+                    <ul>
+                        <li>Add quotes as you receive them - they sync instantly!</li>
+                        <li>More data = better AI-powered price estimates</li>
+                        <li>All team members see the same real-time data</li>
+                        <li>Export CSV anytime for backup or reporting</li>
+                        <li>Data is securely stored in the cloud</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // FIREBASE CONFIGURATION
+        // ==========================================
+        // REPLACE THIS WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        let db;
+        let useFirebase = false;
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            useFirebase = true;
+            console.log('✅ Firebase connected!');
+        } catch (error) {
+            console.warn('⚠️ Firebase not configured, using local storage:', error.message);
+            useFirebase = false;
+        }
+
+        // ==========================================
+        // DATA MANAGEMENT
+        // ==========================================
+        let quotes = [];
+
+        function showSync(message, type = 'syncing') {
+            const syncDiv = document.getElementById('syncStatus');
+            syncDiv.className = `sync-status ${type}`;
+            syncDiv.textContent = message;
+            syncDiv.classList.remove('hide');
+            setTimeout(() => syncDiv.classList.add('hide'), 2000);
+        }
+
+        async function loadQuotes() {
+            if (useFirebase) {
+                try {
+                    const snapshot = await db.collection('quotes').orderBy('id').get();
+                    quotes = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
+                    if (quotes.length === 0) {
+                        await initializeSampleData();
+                    }
+                    showSync('✅ Data loaded', 'success');
+                } catch (error) {
+                    console.error('Error loading:', error);
+                    loadLocalQuotes();
+                }
+            } else {
+                loadLocalQuotes();
+            }
+            updateUI();
+        }
+
+        function loadLocalQuotes() {
+            const saved = localStorage.getItem('aekovera_quotes');
+            quotes = saved ? JSON.parse(saved) : [
+                { id: 1, supplier: 'GlassCo', productType: 'Glass Jar', size: '12oz', pricePerUnit: 1.50, quantity: 1000, moq: 500, leadTime: '3-4 weeks', dateReceived: '2025-01-15', notes: 'Clear' },
+                { id: 2, supplier: 'PlasticPro', productType: 'PET Bottle', size: '16oz', pricePerUnit: 0.42, quantity: 5000, moq: 1000, leadTime: '2-3 weeks', dateReceived: '2025-01-18', notes: 'Cap included' },
+                { id: 3, supplier: 'FlexiPack', productType: 'Stand-Up Pouch', size: '8oz', pricePerUnit: 0.35, quantity: 2000, moq: 500, leadTime: '4-5 weeks', dateReceived: '2025-01-20', notes: 'Resealable' },
+                { id: 4, supplier: 'AluminumWorks', productType: 'Aluminum Can', size: '12oz', pricePerUnit: 0.28, quantity: 10000, moq: 5000, leadTime: '3 weeks', dateReceived: '2025-01-22', notes: 'Standard' },
+                { id: 5, supplier: 'TinSupply', productType: 'Tin Can', size: '4oz', pricePerUnit: 0.65, quantity: 3000, moq: 1000, leadTime: '2 weeks', dateReceived: '2025-01-25', notes: 'Slip lid' }
+            ];
+        }
+
+        async function initializeSampleData() {
+            const sampleQuotes = [
+                { id: 1, supplier: 'GlassCo', productType: 'Glass Jar', size: '12oz', pricePerUnit: 1.50, quantity: 1000, moq: 500, leadTime: '3-4 weeks', dateReceived: '2025-01-15', notes: 'Clear' },
+                { id: 2, supplier: 'PlasticPro', productType: 'PET Bottle', size: '16oz', pricePerUnit: 0.42, quantity: 5000, moq: 1000, leadTime: '2-3 weeks', dateReceived: '2025-01-18', notes: 'Cap included' },
+                { id: 3, supplier: 'FlexiPack', productType: 'Stand-Up Pouch', size: '8oz', pricePerUnit: 0.35, quantity: 2000, moq: 500, leadTime: '4-5 weeks', dateReceived: '2025-01-20', notes: 'Resealable' },
+                { id: 4, supplier: 'AluminumWorks', productType: 'Aluminum Can', size: '12oz', pricePerUnit: 0.28, quantity: 10000, moq: 5000, leadTime: '3 weeks', dateReceived: '2025-01-22', notes: 'Standard' },
+                { id: 5, supplier: 'TinSupply', productType: 'Tin Can', size: '4oz', pricePerUnit: 0.65, quantity: 3000, moq: 1000, leadTime: '2 weeks', dateReceived: '2025-01-25', notes: 'Slip lid' }
+            ];
+            
+            for (const quote of sampleQuotes) {
+                await db.collection('quotes').add(quote);
+            }
+            quotes = sampleQuotes;
+        }
+
+        async function saveQuote(quote) {
+            if (useFirebase) {
+                try {
+                    showSync('🔄 Syncing...', 'syncing');
+                    const docRef = await db.collection('quotes').add(quote);
+                    quote.docId = docRef.id;
+                    showSync('✅ Synced', 'success');
+                } catch (error) {
+                    console.error('Error saving:', error);
+                    showSync('❌ Sync failed', 'error');
+                }
+            }
+            localStorage.setItem('aekovera_quotes', JSON.stringify(quotes));
+        }
+
+        async function deleteQuoteFromDB(quote) {
+            if (useFirebase && quote.docId) {
+                try {
+                    showSync('🔄 Deleting...', 'syncing');
+                    await db.collection('quotes').doc(quote.docId).delete();
+                    showSync('✅ Deleted', 'success');
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    showSync('❌ Delete failed', 'error');
+                }
+            }
+            localStorage.setItem('aekovera_quotes', JSON.stringify(quotes));
+        }
+
+        function updateUI() {
+            updateStats();
+            updateProductTypes();
+            renderQuotes();
+        }
+
+        // ==========================================
+        // UI FUNCTIONS
+        // ==========================================
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'estimator') {
+                document.getElementById('estimator-tab').classList.remove('hide');
+                document.getElementById('database-tab').classList.add('hide');
+            } else {
+                document.getElementById('estimator-tab').classList.add('hide');
+                document.getElementById('database-tab').classList.remove('hide');
+            }
+        }
+
+        function updateStats() {
+            const productTypes = [...new Set(quotes.map(q => q.productType))];
+            document.getElementById('quoteCount').innerHTML = `📊 ${quotes.length} quotes in database`;
+            document.getElementById('productCount').innerHTML = `📦 ${productTypes.length} product types`;
+        }
+
+        function updateProductTypes() {
+            const productTypes = [...new Set(quotes.map(q => q.productType))].sort();
+            const select = document.getElementById('est-product');
+            select.innerHTML = '<option value="">Select product type...</option>';
+            productTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                select.appendChild(option);
+            });
+        }
+
+        function renderQuotes() {
+            const tbody = document.getElementById('quotesTable');
+            tbody.innerHTML = '';
+            quotes.forEach(quote => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${quote.supplier}</td>
+                    <td>${quote.productType}</td>
+                    <td>${quote.size}</td>
+                    <td style="font-weight:bold;color:#667eea">${quote.pricePerUnit.toFixed(2)}</td>
+                    <td>${quote.quantity.toLocaleString()}</td>
+                    <td>${quote.moq || '-'}</td>
+                    <td>${quote.leadTime || '-'}</td>
+                    <td><button class="delete-btn" onclick="deleteQuote(${quote.id})">🗑️ Delete</button></td>
+                `;
+            });
+        }
+
+        // ==========================================
+        // QUOTE OPERATIONS
+        // ==========================================
+        async function addQuote() {
+            const supplier = document.getElementById('supplier').value;
+            const productType = document.getElementById('productType').value;
+            const size = document.getElementById('size').value;
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if (!supplier || !productType || !size || !price || !quantity) {
+                alert('Please fill in required fields: Supplier, Product Type, Size, Price, Quantity');
+                return;
+            }
+
+            const quote = {
+                id: Math.max(0, ...quotes.map(q => q.id)) + 1,
+                supplier,
+                productType,
+                size,
+                pricePerUnit: parseFloat(price),
+                quantity: parseInt(quantity),
+                moq: document.getElementById('moq').value || '',
+                leadTime: document.getElementById('leadTime').value || '',
+                dateReceived: document.getElementById('dateReceived').value || '',
+                notes: document.getElementById('notes').value || ''
+            };
+
+            quotes.push(quote);
+            await saveQuote(quote);
+            updateUI();
+
+            // Clear form
+            ['supplier', 'productType', 'size', 'price', 'quantity', 'moq', 'leadTime', 'dateReceived', 'notes'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+
+            alert('✅ Quote added successfully!');
+        }
+
+        async function deleteQuote(id) {
+            if (confirm('Are you sure you want to delete this quote?')) {
+                const quote = quotes.find(q => q.id === id);
+                quotes = quotes.filter(q => q.id !== id);
+                await deleteQuoteFromDB(quote);
+                updateUI();
+            }
+        }
+
+        function exportCSV() {
+            const headers = ['Supplier', 'Product Type', 'Size', 'Price Per Unit', 'Quantity', 'MOQ', 'Lead Time', 'Date', 'Notes'];
+            const rows = quotes.map(q => [q.supplier, q.productType, q.size, q.pricePerUnit, q.quantity, q.moq, q.leadTime, q.dateReceived, q.notes]);
+            const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'aekovera_quotes.csv';
+            a.click();
+        }
+
+        // ==========================================
+        // PRICE ESTIMATION
+        // ==========================================
+        function calculateEstimate() {
+            const productType = document.getElementById('est-product').value;
+            const size = document.getElementById('est-size').value;
+            const quantity = document.getElementById('est-quantity').value;
+
+            if (!productType || !size || !quantity) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const parseSize = (sizeStr) => {
+                const match = sizeStr.match(/(\d+(?:\.\d+)?)/);
+                return match ? parseFloat(match[1]) : 0;
+            };
+
+            const requestedQty = parseInt(quantity);
+            const requestedSize = parseSize(size);
+            const matchingProducts = quotes.filter(q => q.productType.toLowerCase() === productType.toLowerCase());
+
+            if (matchingProducts.length === 0) {
+                const avgPrice = quotes.reduce((sum, q) => sum + q.pricePerUnit, 0) / quotes.length;
+                showEstimation(avgPrice, 'Low', `No exact matches for ${productType}`, avgPrice * 0.7, avgPrice * 1.5, requestedQty, []);
+                return;
+            }
+
+            const closestQuotes = matchingProducts
+                .map(q => ({
+                    ...q,
+                    sizeDiff: Math.abs(parseSize(q.size) - requestedSize),
+                    qtyDiff: Math.abs(q.quantity - requestedQty)
+                }))
+                .sort((a, b) => a.sizeDiff + a.qtyDiff - (b.sizeDiff + b.qtyDiff))
+                .slice(0, 3);
+
+            let estimatedPrice = 0;
+            let totalWeight = 0;
+
+            closestQuotes.forEach(quote => {
+                const sizeWeight = 1 / (1 + quote.sizeDiff);
+                const qtyWeight = 1 / (1 + quote.qtyDiff / 1000);
+                const weight = sizeWeight * qtyWeight;
+                let adjustedPrice = quote.pricePerUnit;
+                
+                if (requestedQty > quote.quantity) {
+                    adjustedPrice = quote.pricePerUnit * Math.pow(requestedQty / quote.quantity, -0.15);
+                } else if (requestedQty < quote.quantity) {
+                    adjustedPrice = quote.pricePerUnit * Math.pow(quote.quantity / requestedQty, 0.15);
+                }
+                
+                estimatedPrice += adjustedPrice * weight;
+                totalWeight += weight;
+            });
+
+            estimatedPrice = estimatedPrice / totalWeight;
+            const avgSizeDiff = closestQuotes.reduce((sum, q) => sum + q.sizeDiff, 0) / closestQuotes.length;
+            const confidence = avgSizeDiff > 8 ? 'Low' : avgSizeDiff > 4 ? 'Medium' : 'High';
+
+            showEstimation(
+                estimatedPrice,
+                confidence,
+                `Based on ${closestQuotes.length} similar quotes`,
+                estimatedPrice * 0.85,
+                estimatedPrice * 1.15,
+                requestedQty,
+                closestQuotes
+            );
+        }
+
+        function showEstimation(price, confidence, reasoning, low, high, qty, comparables) {
+            document.getElementById('how-it-works').classList.add('hide');
+            const resultDiv = document.getElementById('estimation-result');
+            resultDiv.classList.remove('hide');
+
+            let comparablesHTML = '';
+            if (comparables.length > 0) {
+                comparablesHTML = `
+                    <div style="margin-top:25px">
+                        <h3 style="font-size:1.5rem;margin-bottom:20px;font-weight:800">📊 Similar Quotes Used:</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Supplier</th>
+                                        <th>Size</th>
+                                        <th>Price/Unit</th>
+                                        <th>Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${comparables.map(q => `
+                                        <tr>
+                                            <td>${q.supplier}</td>
+                                            <td>${q.size}</td>
+                                            <td style="font-weight:bold;color:#667eea">${q.pricePerUnit.toFixed(2)}</td>
+                                            <td>${q.quantity.toLocaleString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="result-box">
+                    <h3 style="font-size:1.8rem;margin-bottom:15px;font-weight:800">💵 Estimated Price Per Unit</h3>
+                    <div class="result-price">${price.toFixed(2)}</div>
+                    <p style="margin-bottom:20px;font-size:1.2rem;font-weight:600">${reasoning}</p>
+                    <span class="confidence-badge confidence-${confidence.toLowerCase()}">${confidence} Confidence</span>
+                </div>
+                <div class="form-box">
+                    <div class="form-title">💰 Total Order Cost Estimate</div>
+                    <h2 style="font-size:3rem;color:#667eea;margin-top:15px;font-weight:900">${(price * qty).toLocaleString()}</h2>
+                    <p style="margin-top:15px;color:#64748b;font-size:1.1rem;font-weight:600">
+                        Range: ${(low * qty).toLocaleString()} - ${(high * qty).toLocaleString()}
+                    </p>
+                </div>
+                ${comparablesHTML}
+            `;
+        }
+
+        // ==========================================
+        // INITIALIZE
+        // ==========================================
+        window.onload = async function() {
+            await loadQuotes();
+            
+            // Setup real-time listener if Firebase is enabled
+            if (useFirebase) {
+                db.collection('quotes').onSnapshot(snapshot => {
+                    quotes = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
+                    updateUI();
+                    console.log('🔄 Real-time update received');
+                });
+            }
+        };
+    </script>
+</body>
+</html>
